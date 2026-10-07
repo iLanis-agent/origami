@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Origami: what size paper do you need?</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f2f6f4;color:#1e2f28;min-height:100vh;padding:24px 14px;display:flex;justify-content:center}
+main{width:100%;max-width:540px}
+h1{font-size:22px;margin-bottom:2px}
+.sub{color:#5f7a6e;font-size:13px;margin-bottom:18px}
+.card{background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(30,80,60,.08);padding:20px;margin-bottom:16px}
+label{font-size:12px;font-weight:600;color:#5f7a6e;display:block;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+input,select{width:100%;padding:10px 12px;border:1.5px solid #d3e0d9;border-radius:9px;font-size:16px;font-family:inherit;background:#fff}
+input:focus,select:focus{outline:none;border-color:#2e8b6a}
+.result{margin-top:14px;padding:14px;border-radius:10px;background:#e4f2eb;display:none}
+.result.show{display:block}
+.big{font-size:18px;font-weight:700;color:#1d6b4e}
+.kv{font-size:13px;color:#3d5a4d;margin-top:4px;line-height:1.5}
+.row2{display:flex;gap:10px}.row2>div{flex:1}
+a{color:#1d6b4e;text-decoration:none}
+footer{font-size:12px;color:#7d968b;text-align:center;margin-top:6px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+td,th{padding:5px 4px;text-align:left;border-bottom:1px solid #dde9e2}
+</style>
+</head>
+<body>
+<main>
+<h1>Origami</h1>
+<p class="sub">Paper sizing for classic folds</p>
+<div class="card">
+<label>Size a model</label>
+<div class="row2">
+<div><label for="model">Model</label><select id="model"></select></div>
+<div><label for="target">Target size (cm)</label><input id="target" value="15" inputmode="decimal"></div>
+</div>
+<div class="result" id="size"></div>
+</div>
+<div class="card">
+<label>Cut the biggest square</label>
+<div class="row2">
+<div><label for="sheet">Sheet</label><select id="sheet"></select></div>
+</div>
+<div class="result" id="cut"></div>
+</div>
+<div class="card">
+<label>Model ratios</label>
+<div id="table"></div>
+</div>
+<footer>Ratios are approximations from classic folds; precision and paper weight shift results. <a href="index.html">About</a></footer>
+</main>
+<script src="engine.js"></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+var esc=function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;};
+Origami.list().forEach(function(m){
+  var o=document.createElement('option');o.value=m.id;o.textContent=m.name;
+  $('model').appendChild(o);
+});
+Origami.sheets().forEach(function(s){
+  var o=document.createElement('option');o.value=s.id;
+  o.textContent=s.name+' ('+s.w+' x '+s.h+' cm)';
+  $('sheet').appendChild(o);
+});
+function size(){
+  var r=Origami.paperFor($('model').value,parseFloat($('target').value));
+  var box=$('size');
+  if(!r){box.classList.remove('show');return;}
+  box.classList.add('show');
+  var h='<div class="big">'+r.sideCm+' cm square</div>';
+  h+='<div class="kv">for a '+esc($('target').value)+' cm '+r.dim+' on a '+esc(r.model)+'. ';
+  if(r.suggest)h+='Nearest standard origami square: '+r.suggest+' cm (slightly larger).';
+  else h+='Larger than standard squares - join sheets or scale down.';
+  h+=' '+esc(Origami.byId($('model').value).note)+'</div>';
+  box.innerHTML=h;
+}
+function cut(){
+  var r=Origami.sheetSquare($('sheet').value);
+  var box=$('cut');
+  if(!r){box.classList.remove('show');return;}
+  box.classList.add('show');
+  var h='<div class="big">'+r.side+' cm square from '+esc(r.sheet)+'</div>';
+  if(r.leftover.length){
+    var l=r.leftover[0];
+    h+='<div class="kv">Leftover strip: '+l.w+' x '+l.h+' cm - good for lucky stars (need strips about 1:'+'25 ratio of width to length).</div>';
+  }else h+='<div class="kv">Already square.</div>';
+  box.innerHTML=h;
+}
+var t='<table><tr><th>Model</th><th>'+'Sig. dimension'+'</th><th>Ratio</th><th>Level</th></tr>';
+Origami.list().forEach(function(m){
+  t+='<tr><td>'+esc(m.name)+'</td><td>'+m.dim+'</td><td>'+m.ratio+'</td><td>'+'\u2605'.repeat(m.difficulty)+'</td></tr>';
+});
+$('table').innerHTML=t+'</table>';
+$('model').addEventListener('change',size);
+$('target').addEventListener('input',size);
+$('sheet').addEventListener('change',cut);
+size();cut();
+</script>
+</body>
+</html>
